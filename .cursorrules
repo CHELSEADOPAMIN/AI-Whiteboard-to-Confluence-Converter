@@ -1,0 +1,355 @@
+# AI Whiteboard Analysis Platform - Cursor Rules
+
+## Project Overview
+This is an enterprise-grade AI whiteboard analysis platform with both frontend (React + Vite) and backend (Node.js + Express) components. The system integrates multiple AI providers (OpenAI + Google Gemini) and provides intelligent image analysis with multi-language support.
+
+## Tech Stack
+
+### Backend
+- **Runtime**: Node.js 18+ with Express.js
+- **Database**: PostgreSQL with Drizzle ORM
+- **Cache/Queue**: Upstash Redis
+- **Storage**: Supabase Storage
+- **AI Integration**: Vercel AI SDK, OpenAI, Google Gemini
+- **Testing**: Jest + Supertest
+- **Deployment**: Docker + Docker Compose
+
+### Frontend
+- **Framework**: React 18 + Vite
+- **UI Library**: Material-UI (MUI)
+- **Testing**: Vitest + React Testing Library + Playwright
+- **Internationalization**: Custom i18n system
+- **Theme System**: Multi-theme support with accessibility
+
+## Code Style & Standards
+
+### General Rules
+- Use English for all comments and documentation
+- Chinese for communication, but no Chinese in code
+- No emojis in code
+- No gradients in UI design
+- Make UI look modern (2025 style)
+- Write necessary comments only, not everywhere
+
+### Backend Code Style
+```javascript
+// ✅ Good: Clear function names and proper error handling
+async function analyzeImageWithAI(task) {
+  try {
+    const result = await generateWhiteboardAnalysis({
+      modelName: task.modelName,
+      promptText: task.prompt,
+      imageUrl: task.image_url
+    });
+    return formatResult(result);
+  } catch (error) {
+    console.error(`Error processing task ${task.id}:`, error.message);
+    throw error;
+  }
+}
+
+// ❌ Bad: Unclear naming and missing error handling
+async function doStuff(data) {
+  const x = await ai(data);
+  return x;
+}
+```
+
+### Frontend Code Style
+```jsx
+// ✅ Good: Proper component structure and hooks usage
+const ImageUpload = ({ onUpload, isLoading }) => {
+  const [dragActive, setDragActive] = useState(false);
+  
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      onUpload(files[0]);
+    }
+  }, [onUpload]);
+
+  return (
+    <div 
+      className={`upload-area ${dragActive ? 'active' : ''}`}
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+    >
+      {/* Component content */}
+    </div>
+  );
+};
+
+// ❌ Bad: Inline styles and poor state management
+<div style={{border: '1px solid red'}} onClick={() => setState(true)}>
+  {/* content */}
+</div>
+```
+
+## Architecture Patterns
+
+### Backend Architecture (MVC + Service Layer)
+```
+src/
+├── ai/                    # AI analysis core module
+│   ├── core.js           # Main AI processing logic
+│   ├── models.js         # Multi-AI model management
+│   ├── prompts.js        # Prompt template system
+│   ├── schemas.js        # Zod schema definitions
+│   └── security.js       # AI security validation
+├── controllers/          # Request handling and validation
+├── services/            # Business logic layer
+├── models/              # Database models (Drizzle ORM)
+├── routes/              # API endpoint definitions
+└── middleware/          # Cross-cutting concerns
+```
+
+### Frontend Architecture (Component-based)
+```
+src/
+├── components/
+│   ├── common/          # Reusable components
+│   ├── main/           # Main application flow
+│   ├── setting/        # Settings-related components
+│   └── toolbar/        # Toolbar-specific components
+├── hooks/              # Custom React hooks
+├── services/           # API communication
+├── theme/              # Theme management
+└── i18n/              # Internationalization
+```
+
+## Key Features & Implementation
+
+### 1. Multi-AI Model Integration
+- **Supported Models**: 12 models across OpenAI and Google Gemini
+- **Smart Fallback**: Automatic model switching on rate limits
+- **Unified Interface**: Single API for all AI providers
+- **Model Management**: Dynamic availability detection
+
+```javascript
+// Example: Smart fallback mechanism
+if (isRateLimitError && isGeminiModel) {
+  console.warn(`[AI RETRY] Gemini model ${modelName} encountered 429, trying fallback model ${FALLBACK_MODEL_NAME}...`);
+  const fallbackObject = await generateObject({
+    model: fallbackModel,
+    ...generateParams // Same parameters
+  });
+  return fallbackObject;
+}
+```
+
+### 2. Security & Input Validation
+- **Multi-language Keyword Filtering**: 187 high-risk keywords across 6 languages
+- **Input Sanitization**: Automatic content cleaning and validation
+- **Security Event Logging**: Complete audit trail for security events
+- **User Input Validation**: Length limits and content filtering
+
+```javascript
+// Example: Security validation
+const securityCheck = validateUserInput(userCustomText, {
+  maxLength: 500,
+  strictMode: false
+});
+
+if (!securityCheck.isValid) {
+  logSecurityEvent('BLOCKED_INJECTION_ATTEMPT', {
+    taskId: task.id,
+    reason: securityCheck.reason,
+    matchedKeywords: securityCheck.matchedKeywords
+  });
+  throw new Error(errorMessage);
+}
+```
+
+### 3. Structured Output System
+- **Zod Schema Validation**: Type-safe AI output validation
+- **Vercel AI SDK Integration**: Automatic structured output generation
+- **Multi-language Support**: 6 languages with consistent output format
+- **Output Cleaning**: Automatic Markdown and format normalization
+
+### 4. Async Task Processing
+- **Redis Queue**: FIFO task processing with Redis
+- **Worker Process**: Dedicated background task processor
+- **Status Management**: Complete task lifecycle tracking
+- **Error Handling**: Comprehensive error recovery and logging
+
+### 5. Database Design
+- **Drizzle ORM**: Type-safe database operations
+- **Migration Management**: Automated schema versioning
+- **Composite Indexes**: Optimized query performance
+- **Foreign Key Constraints**: Data integrity enforcement
+
+## Testing Guidelines
+
+### Backend Testing
+- **Unit Tests**: Jest for service and utility functions
+- **Integration Tests**: Supertest for API endpoints
+- **Real Dependencies**: PostgreSQL and Redis integration
+- **Coverage**: Aim for >80% code coverage
+
+```javascript
+// Example: API integration test
+test('should create image analysis task successfully', async () => {
+  const response = await request(app)
+    .post('/api/images')
+    .field('user_id', testUserId)
+    .field('model_name', 'gemini-1.5-flash')
+    .attach('imageFile', testImagePath)
+    .expect(202);
+
+  expect(response.body).toHaveProperty('image_id');
+  expect(response.body.status).toBe('pending');
+});
+```
+
+### Frontend Testing
+- **Unit Tests**: Vitest + React Testing Library for components
+- **E2E Tests**: Playwright for complete user journeys
+- **Component Testing**: Isolated component behavior verification
+- **Integration Testing**: Service layer and API integration
+
+## Development Workflow
+
+### Getting Started
+1. **Backend Setup**:
+   ```bash
+   cd forge-backend
+   npm install
+   cp .env.example .env
+   # Configure environment variables
+   npx drizzle-kit push:pg
+   npm run dev
+   ```
+
+2. **Frontend Setup**:
+   ```bash
+   cd forge-frontend
+   npm install
+   npm run dev
+   ```
+
+3. **Testing**:
+   ```bash
+   # Backend tests
+   npm test
+   npm run test:coverage
+   
+   # Frontend tests
+   npm test
+   npx playwright test
+   ```
+
+### Environment Configuration
+Required environment variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `SUPABASE_URL` & `SUPABASE_ANON_KEY`: Supabase configuration
+- `UPSTASH_REDIS_REST_URL` & `UPSTASH_REDIS_REST_TOKEN`: Redis configuration
+- `OPENAI_API_KEY` & `GEMINI_API_KEY`: AI provider API keys
+
+### Docker Deployment
+```bash
+# Run with Docker Compose
+docker compose -f forge-backend/docker-compose.yml up -d --build
+```
+
+## Code Review Guidelines
+
+### Backend Code Review
+- [ ] Proper error handling and logging
+- [ ] Security validation for user inputs
+- [ ] Database transaction usage
+- [ ] AI model fallback mechanisms
+- [ ] Test coverage for new features
+
+### Frontend Code Review
+- [ ] Component reusability and props validation
+- [ ] Proper state management with hooks
+- [ ] Accessibility considerations
+- [ ] Theme and internationalization support
+- [ ] Performance optimization
+
+## Performance Considerations
+
+### Backend Performance
+- **Connection Pooling**: Efficient database connections
+- **Redis Caching**: Queue and cache optimization
+- **AI Model Selection**: Cost and performance balance
+- **File Upload Limits**: 10MB maximum with memory storage
+
+### Frontend Performance
+- **Code Splitting**: Lazy loading for better initial load
+- **Image Optimization**: Efficient image handling
+- **State Management**: Minimal re-renders
+- **Bundle Optimization**: Vite build optimization
+
+## Security Best Practices
+
+1. **Input Validation**: Always validate and sanitize user inputs
+2. **API Security**: Implement proper authentication and authorization
+3. **Error Handling**: Don't expose sensitive information in error messages
+4. **Logging**: Comprehensive security event logging
+5. **Dependencies**: Regular dependency updates and vulnerability scanning
+
+## Contributing Guidelines
+
+1. **Branch Naming**: Use descriptive branch names (feature/security-enhancement)
+2. **Commit Messages**: Clear, descriptive commit messages
+3. **Pull Requests**: Include test coverage and documentation updates
+4. **Code Style**: Follow existing patterns and use ESLint/Prettier
+5. **Testing**: Ensure all tests pass before submitting PR
+
+## Documentation
+
+- **API Documentation**: Available at `/api/images/capabilities`
+- **Test Documentation**: See `tests/README.md` in both backend and frontend
+- **Deployment Guide**: See main `README.md` for deployment instructions
+
+## Common Patterns
+
+### Error Handling Pattern
+```javascript
+try {
+  const result = await someAsyncOperation();
+  return { success: true, data: result };
+} catch (error) {
+  console.error('Operation failed:', error.message);
+  return { success: false, error: error.message };
+}
+```
+
+### Service Layer Pattern
+```javascript
+// Service handles business logic
+async function createImageAnalysisTask({ file, user_id, model_name }) {
+  const imageUrl = await uploadToSupabaseStorage(file);
+  const finalPrompt = buildFinalPrompt({ promptType, customText, language });
+  
+  const task = { id: uuidv4(), user_id, image_url: imageUrl, ... };
+  await db.insert(images).values(task);
+  await redis.lpush('image_analysis_queue', JSON.stringify(task));
+  
+  return { message: 'Task created successfully', image_id: task.id };
+}
+```
+
+### Component Pattern
+```jsx
+// Reusable component with proper props
+const ReusableComponent = ({ 
+  title, 
+  onAction, 
+  isLoading = false,
+  variant = 'primary' 
+}) => {
+  return (
+    <div className={`component ${variant}`}>
+      <h2>{title}</h2>
+      <button onClick={onAction} disabled={isLoading}>
+        {isLoading ? 'Loading...' : 'Action'}
+      </button>
+    </div>
+  );
+};
+```
+
+Remember: This is an enterprise-grade application with security, performance, and reliability as top priorities. Always consider these aspects when making changes or adding new features.

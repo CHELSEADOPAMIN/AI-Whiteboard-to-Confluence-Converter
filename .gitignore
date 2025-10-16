@@ -1,0 +1,21 @@
+node_modules/
+.env
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode/
+.idea/
+.cursor/
+
+# OAuth and authentication files
+token.json
+credentials.json
+**/e2e/token.json
+**/e2e/credentials.json
+
+# Test results and coverage
+test-results/
+coverage/
+playwright-report/
