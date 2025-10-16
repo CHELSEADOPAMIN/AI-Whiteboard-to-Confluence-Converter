@@ -1,24 +1,3 @@
-# Quick Experience
-Now our frontend and backend have been deployed and tested online. You can access them at the following website:
-
-```bash
-Frontend: https://s.coly.cc/ai
-Backend: https://f.a2a.ing/
-```
-Before you access our frontend, you may need to login first:
-
-```bash
-Email: xiyusheng.2001@gmail.com
-Password: TEST1234567
-```
-
-Email verification will be required. Check the Gmail account below for the verification code:
-
-```bash
-Email: xiyusheng.2001@gmail.com
-Password: DLC1008611s
-```
-
 # Test Our App:
 
 ## Test Coverage& Report
